@@ -8,12 +8,13 @@ import click
 import uvicorn
 from fastapi import FastAPI, File, Query, UploadFile, applications
 from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from whisper import tokenizer
 
 from app.config import CONFIG
 from app.factory.asr_model_factory import ASRModelFactory
+from app.telemetry import get_metrics_reader, setup_telemetry
 from app.utils import load_audio
 
 asr_model = ASRModelFactory.create_asr_model()
@@ -30,6 +31,9 @@ app = FastAPI(
     swagger_ui_parameters={"defaultModelsExpandDepth": -1},
     license_info={"name": "MIT License", "url": "https://github.com/pbusenius/whisper-asr-webservice/blob/main/LICENCE"},
 )
+
+# Set up OpenTelemetry instrumentation
+setup_telemetry(app, service_name=CONFIG.OTEL_SERVICE_NAME)
 
 assets_path = os.getcwd() + "/swagger-ui-assets"
 if path.exists(assets_path + "/swagger-ui.css") and path.exists(assets_path + "/swagger-ui-bundle.js"):
@@ -50,6 +54,38 @@ if path.exists(assets_path + "/swagger-ui.css") and path.exists(assets_path + "/
 @app.get("/", response_class=RedirectResponse, include_in_schema=False)
 async def index():
     return "/docs"
+
+
+@app.get(CONFIG.OTEL_PROMETHEUS_METRICS_PATH, tags=["Monitoring"], include_in_schema=False)
+async def metrics():
+    """
+    Prometheus metrics endpoint for OpenTelemetry metrics.
+    """
+    metrics_reader = get_metrics_reader()
+    if metrics_reader is None:
+        from fastapi.responses import PlainTextResponse
+
+        return PlainTextResponse("OpenTelemetry metrics not enabled", status_code=503)
+
+    # Get the Prometheus registry from the metric reader
+    # PrometheusMetricReader exposes metrics via a Prometheus registry
+    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+
+    # Access the registry from the PrometheusMetricReader
+    # The registry is stored in the _collector attribute
+    try:
+        registry = metrics_reader._collector._registry
+    except AttributeError:
+        # Try alternative access pattern
+        try:
+            registry = metrics_reader._registry
+        except AttributeError:
+            # Fallback to default registry
+            from prometheus_client import REGISTRY
+
+            registry = REGISTRY
+
+    return Response(content=generate_latest(registry=registry), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.post("/asr", tags=["Endpoints"])

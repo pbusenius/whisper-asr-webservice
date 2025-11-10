@@ -45,3 +45,16 @@ class CONFIG:
     SUBTITLE_MAX_LINE_WIDTH = int(os.getenv("SUBTITLE_MAX_LINE_WIDTH", 1000))
     SUBTITLE_MAX_LINE_COUNT = int(os.getenv("SUBTITLE_MAX_LINE_COUNT", 2))
     SUBTITLE_HIGHLIGHT_WORDS = os.getenv("SUBTITLE_HIGHLIGHT_WORDS", "false").lower() == "true"
+
+    # OpenTelemetry configuration
+    # Enable/disable OpenTelemetry instrumentation
+    OTEL_ENABLED = os.getenv("OTEL_ENABLED", "true").lower() == "true"
+
+    # Service name for OpenTelemetry
+    OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "whisper-asr-webservice")
+
+    # OTLP exporter endpoint (optional, for sending traces/metrics to collector)
+    OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+
+    # Prometheus metrics endpoint path
+    OTEL_PROMETHEUS_METRICS_PATH = os.getenv("OTEL_PROMETHEUS_METRICS_PATH", "/metrics")
