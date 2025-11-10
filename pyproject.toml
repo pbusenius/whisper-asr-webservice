@@ -12,6 +12,7 @@ dependencies = [
     "openai-whisper (>=20250625)",
     "faster-whisper (>=1.1.1)",
     "whisperx (>=3.4.2)",
+    "transformers (>=4.40.0)",
     "tqdm (>=4.67.1)",
     "llvmlite (>=0.44.0)",
     "numba (>=0.61.2)",
