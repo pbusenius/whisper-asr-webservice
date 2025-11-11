@@ -69,11 +69,6 @@ Key configuration options:
 - `ASR_DEVICE`: Device selection (cuda, cpu)
 - `MODEL_IDLE_TIMEOUT`: Timeout for model unloading
 
-## Documentation
-
-For complete documentation, visit:
-[https://pbusenius.github.io/whisper-asr-webservice](https://pbusenius.github.io/whisper-asr-webservice)
-
 ## Development
 
 ```shell
