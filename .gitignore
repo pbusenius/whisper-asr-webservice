@@ -42,3 +42,10 @@ pip-wheel-metadata
 poetry/core/*
 
 public
+
+# Audio files
+*.mp3
+*.wav
+*.m4a
+*.flac
+*.ogg
