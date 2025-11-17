@@ -73,6 +73,97 @@ Key configuration options:
 - `OTEL_ENABLED`: Enable/disable OpenTelemetry instrumentation (default: true)
 - `OTEL_SERVICE_NAME`: Service name for OpenTelemetry (default: asr-api)
 - `OTEL_EXPORTER_OTLP_ENDPOINT`: Optional OTLP endpoint for traces/metrics
+- `OTEL_PROMETHEUS_METRICS_PATH`: Path for Prometheus metrics endpoint (default: /metrics)
+- `OTEL_LOG_LEVEL`: Set to "debug" to enable console span exporter for debugging
+
+## OpenTelemetry Konfiguration
+
+OpenTelemetry ist standardmäßig aktiviert und bietet automatisches Monitoring der API. Es gibt verschiedene Konfigurationsmöglichkeiten:
+
+### Standard-Konfiguration (Prometheus Metrics)
+
+Standardmäßig werden Prometheus-Metriken am `/metrics` Endpoint bereitgestellt:
+
+```shell
+docker run -d -p 9000:9000 \
+  -e ASR_MODEL=base \
+  pbusenius/asr-api:latest
+```
+
+Die Metriken können dann von Prometheus gescrapt werden:
+```yaml
+scrape_configs:
+  - job_name: 'asr-api'
+    static_configs:
+      - targets: ['localhost:9000']
+```
+
+### OTLP Exporter (für Jaeger, Tempo, etc.)
+
+Um Traces und Metriken an einen OTLP Collector zu senden:
+
+```shell
+docker run -d -p 9000:9000 \
+  -e ASR_MODEL=base \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317 \
+  pbusenius/asr-api:latest
+```
+
+**Hinweis:** Für OTLP Support muss das optionale Paket `opentelemetry-exporter-otlp` installiert sein:
+
+```shell
+# Mit uv
+uv sync --extra otlp
+
+# Oder mit pip
+pip install opentelemetry-exporter-otlp
+```
+
+Falls es fehlt, wird eine Warnung ausgegeben und OTLP wird nicht verwendet.
+
+### Debug-Modus (Console Exporter)
+
+Für lokale Entwicklung können Traces in der Konsole ausgegeben werden:
+
+```shell
+docker run -d -p 9000:9000 \
+  -e ASR_MODEL=base \
+  -e OTEL_LOG_LEVEL=debug \
+  pbusenius/asr-api:latest
+```
+
+### OpenTelemetry deaktivieren
+
+Falls OpenTelemetry nicht benötigt wird:
+
+```shell
+docker run -d -p 9000:9000 \
+  -e ASR_MODEL=base \
+  -e OTEL_ENABLED=false \
+  pbusenius/asr-api:latest
+```
+
+### Benutzerdefinierter Service-Name
+
+```shell
+docker run -d -p 9000:9000 \
+  -e ASR_MODEL=base \
+  -e OTEL_SERVICE_NAME=my-asr-service \
+  pbusenius/asr-api:latest
+```
+
+### Vollständige Beispiel-Konfiguration
+
+```shell
+docker run -d -p 9000:9000 \
+  -e ASR_MODEL=base \
+  -e ASR_ENGINE=faster_whisper \
+  -e OTEL_ENABLED=true \
+  -e OTEL_SERVICE_NAME=asr-api-production \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317 \
+  -e OTEL_PROMETHEUS_METRICS_PATH=/metrics \
+  pbusenius/asr-api:latest
+```
 
 ## Development
 
