@@ -36,7 +36,7 @@
       },
       "targets": [
         {
-          "expr": "rate(http_server_duration_milliseconds_count{service=\"asr-api\"}[5m])",
+          "expr": "sum(rate(http_server_duration_milliseconds_count{service=\"asr-api\"}[5m]))",
           "legendFormat": "Requests/sec",
           "refId": "A"
         }
