@@ -1,10 +1,8 @@
-FROM pbusenius/ffmpeg:n7.1 AS ffmpeg
-
 FROM swaggerapi/swagger-ui:v5.9.1 AS swagger-ui
 
 FROM nvidia/cuda:12.6.3-base-ubuntu22.04
 
-LABEL org.opencontainers.image.source="https://github.com/pbusenius/whisper-asr-webservice"
+LABEL org.opencontainers.image.source="https://github.com/pbusenius/asr-api"
 
 ENV PYTHON_VERSION=3.10
 
@@ -15,6 +13,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     python${PYTHON_VERSION}-venv \
     python3-pip \
     libcudnn8 \
+    ffmpeg \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -28,7 +27,6 @@ WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 COPY . .
-COPY --from=ffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
 COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui.css swagger-ui-assets/swagger-ui.css
 COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui-bundle.js swagger-ui-assets/swagger-ui-bundle.js
 
