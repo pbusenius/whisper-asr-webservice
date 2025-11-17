@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asr-api
+  namespace: forensic-tools
+  labels:
+    app: asr-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: asr-api
+  template:
+    metadata:
+      labels:
+        app: asr-api
+    spec:
+      containers:
+        - name: asr-api
+          image: "pbusenius/asr-api:0.1"
+          ports:
+            - containerPort: 9000
+          env:
+            - name: ASR_MODEL
+              value: "base"
+            - name: ASR_ENGINE
+              value: "faster_whisper"
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
+
