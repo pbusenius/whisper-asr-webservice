@@ -67,6 +67,53 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/debug/cuda", tags=["Debug"], status_code=200, summary="CUDA debug info", description="Debug endpoint to check CUDA availability and device info")
+async def debug_cuda():
+    """
+    Debug endpoint to check CUDA availability.
+    
+    Returns information about CUDA availability, PyTorch CUDA support, and device information.
+    """
+    import torch
+    import sys
+    
+    debug_info = {
+        "python_version": sys.version,
+        "pytorch_version": torch.__version__,
+        "pytorch_cuda_available": torch.cuda.is_available(),
+        "pytorch_cuda_version": torch.version.cuda if torch.cuda.is_available() else None,
+        "pytorch_cudnn_version": torch.backends.cudnn.version() if torch.cuda.is_available() else None,
+        "cuda_device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+        "current_device": torch.cuda.current_device() if torch.cuda.is_available() else None,
+        "device_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+        "config_device": CONFIG.DEVICE,
+        "config_quantization": CONFIG.MODEL_QUANTIZATION,
+        "asr_engine": CONFIG.ASR_ENGINE,
+    }
+    
+    # Check faster-whisper / CTranslate2 CUDA support
+    try:
+        import ctranslate2
+        debug_info["ctranslate2_cuda_available"] = ctranslate2.get_cuda_device_count() > 0
+        debug_info["ctranslate2_cuda_device_count"] = ctranslate2.get_cuda_device_count()
+    except Exception as e:
+        debug_info["ctranslate2_error"] = str(e)
+    
+    # Check if model is loaded and what device it's using
+    try:
+        if hasattr(asr_model, 'model') and asr_model.model is not None:
+            if hasattr(asr_model.model, 'device'):
+                debug_info["model_device"] = str(asr_model.model.device)
+            elif hasattr(asr_model.model, '_model'):
+                # faster-whisper uses _model attribute
+                debug_info["model_loaded"] = True
+                debug_info["model_type"] = type(asr_model.model).__name__
+    except Exception as e:
+        debug_info["model_check_error"] = str(e)
+    
+    return debug_info
+
+
 @app.get(CONFIG.OTEL_PROMETHEUS_METRICS_PATH, tags=["Monitoring"])
 async def metrics():
     """
