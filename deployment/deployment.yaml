@@ -5,19 +5,22 @@ metadata:
   namespace: forensic-tools
   labels:
     app: asr-api
+    variant: gpu
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: asr-api
+      variant: gpu
   template:
     metadata:
       labels:
         app: asr-api
+        variant: gpu
     spec:
       containers:
         - name: asr-api
-          image: "pbusenius/asr-api:0.1.1"
+          image: "pbusenius/asr-api:0.1.3-gpu"
           ports:
             - containerPort: 9000
           env:
@@ -25,20 +28,31 @@ spec:
               value: "base"
             - name: ASR_ENGINE
               value: "faster_whisper"
+            - name: ASR_DEVICE
+              value: "cuda"
+            - name: ASR_QUANTIZATION
+              value: "float16"
+              # Note: The application will automatically fallback to CPU if CUDA is not available
+              # or if there's a CUDA driver/runtime version mismatch
+              # float16 is recommended for GPU (good balance of speed and accuracy)
+              # Options: float32 (best accuracy, slower), float16 (recommended), int8 (fastest, lower accuracy)
             - name: OTEL_ENABLED
               value: "true"
             - name: OTEL_SERVICE_NAME
-              value: "asr-api"
+              value: "asr-api-gpu"
             - name: OTEL_PROMETHEUS_METRICS_PATH
               value: "/metrics"
+            - name: ASR_MODEL_PATH
+              value: "/app/models"
             # Optional: If you want to push metrics via OTLP instead of scraping
             # - name: OTEL_EXPORTER_OTLP_ENDPOINT
             #   value: "http://prometheus-server.monitoring.svc.cluster.local:80"
           resources:
             requests:
-              memory: "2Gi"
-              cpu: "1000m"
-            limits:
               memory: "4Gi"
               cpu: "2000m"
-
+              nvidia.com/gpu: 1
+            limits:
+              memory: "8Gi"
+              cpu: "4000m"
+              nvidia.com/gpu: 1
