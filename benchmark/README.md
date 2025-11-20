@@ -22,11 +22,14 @@ uv pip install -r requirements.txt
 
 ### Basic usage
 ```bash
-# Using uv run (from project root)
-uv run benchmark/benchmark.py --number-of-runs 10
+# Install only benchmark dependencies (requests)
+uv pip install requests
 
-# Or directly with python (if dependencies installed)
-python benchmark.py --number-of-runs 10
+# Run benchmark directly with python (recommended - avoids installing CUDA dependencies)
+python3 benchmark/benchmark.py --number-of-runs 10
+
+# Or using uv run (installs ALL project dependencies including CUDA packages)
+uv run benchmark/benchmark.py --number-of-runs 10
 ```
 
 ### With custom API URL
