@@ -23,7 +23,7 @@ spec:
         nvidia.com/gpu.present: "true"
       containers:
         - name: asr-api
-          image: "pbusenius/asr-api:0.1.7"
+                image: "pbusenius/asr-api:0.2.0"
           ports:
             - containerPort: 9000
           env:
