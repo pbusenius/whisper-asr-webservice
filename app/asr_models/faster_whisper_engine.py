@@ -8,7 +8,10 @@ from faster_whisper import WhisperModel
 
 from app.asr_models.asr_model import ASRModel
 from app.config import CONFIG
+from app.logging_config import get_logger
 from app.utils import ResultWriter, WriteJSON, WriteSRT, WriteTSV, WriteTXT, WriteVTT
+
+logger = get_logger(__name__)
 
 
 class FasterWhisperASR(ASRModel):
@@ -26,7 +29,12 @@ class FasterWhisperASR(ASRModel):
             )
         except RuntimeError as e:
             if device == "cuda" and ("CUDA" in str(e) or "cuda" in str(e).lower()):
-                print(f"CUDA error during model loading: {e}, falling back to CPU")
+                logger.warning(
+                    "CUDA error during model loading, falling back to CPU",
+                    error=str(e),
+                    device=device,
+                    compute_type=compute_type,
+                )
                 device = "cpu"
                 compute_type = "int8"
                 self.model = WhisperModel(

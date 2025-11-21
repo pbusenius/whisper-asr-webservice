@@ -10,7 +10,10 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
 
 from app.asr_models.asr_model import ASRModel
 from app.config import CONFIG
+from app.logging_config import get_logger
 from app.utils import ResultWriter, WriteJSON, WriteSRT, WriteTSV, WriteTXT, WriteVTT
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -157,7 +160,7 @@ class VoxtralASR(ASRModel):
         gc.collect()
         self.model = None
         self.processor = None
-        print("Model unloaded due to timeout")
+        logger.info("Model unloaded due to timeout", timeout=CONFIG.MODEL_IDLE_TIMEOUT)
 
     def write_result(self, result: dict, file: BinaryIO, output: Union[str, None]):
         if output == "srt":

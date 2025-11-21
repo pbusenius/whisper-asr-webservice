@@ -19,6 +19,7 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi (>=0.45b0)",
     "opentelemetry-exporter-prometheus (>=0.55b1)",
     "prometheus-client (>=0.20.0)",
+    "structlog (>=24.1.0)",
     "tqdm (>=4.67.1)",
     "llvmlite (>=0.44.0)",
     "numba (>=0.61.2)",

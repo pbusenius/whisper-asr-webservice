@@ -14,7 +14,8 @@ class CONFIG:
     # Retrieve Huggingface Token
     HF_TOKEN = os.getenv("HF_TOKEN", "")
     if ASR_ENGINE == "whisperx" and HF_TOKEN == "":
-        print("You must set the HF_TOKEN environment variable to download the diarization model used by WhisperX.")
+        # Warning will be logged later when logger is initialized
+        pass
 
     # Determine the computation device (GPU or CPU)
     DEVICE = os.getenv("ASR_DEVICE", "cuda" if torch.cuda.is_available() else "cpu")
@@ -58,3 +59,8 @@ class CONFIG:
 
     # Prometheus metrics endpoint path
     OTEL_PROMETHEUS_METRICS_PATH = os.getenv("OTEL_PROMETHEUS_METRICS_PATH", "/metrics")
+
+    # Structured logging configuration
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+    LOG_JSON = os.getenv("LOG_JSON", "true").lower() == "true"
+    LOG_COLORS = os.getenv("LOG_COLORS", "false").lower() == "true"

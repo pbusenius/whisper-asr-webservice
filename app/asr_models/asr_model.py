@@ -7,6 +7,9 @@ from typing import Union
 import torch
 
 from app.config import CONFIG
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class ASRModel(ABC):
@@ -73,4 +76,4 @@ class ASRModel(ABC):
         torch.cuda.empty_cache()
         gc.collect()
         self.model = None
-        print("Model unloaded due to timeout")
+        logger.info("Model unloaded due to timeout", timeout=CONFIG.MODEL_IDLE_TIMEOUT)

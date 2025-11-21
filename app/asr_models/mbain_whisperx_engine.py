@@ -10,6 +10,9 @@ from whisperx.utils import ResultWriter, SubtitlesWriter, WriteJSON, WriteSRT, W
 
 from app.asr_models.asr_model import ASRModel
 from app.config import CONFIG
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class WhisperXASR(ASRModel):
@@ -97,11 +100,21 @@ class WhisperXASR(ASRModel):
             if self.model is None:
                 self.load_model()
             if audio.shape[0] < N_SAMPLES:
-                print("Warning: audio is shorter than 30s, language detection may be inaccurate.")
+                logger.warning(
+                    "Audio shorter than 30s",
+                    message="Language detection may be inaccurate",
+                    audio_length=audio.shape[0],
+                    required_length=N_SAMPLES,
+                )
             results = self.model['whisperx'].model.detect_language(audio)
             language = results[0]
             language_probability = round(float(results[1]), 2)
-            print(f"Detected language: {language} ({language_probability}) in first 30s of audio...")
+            logger.info(
+                "Language detected",
+                language=language,
+                probability=language_probability,
+                audio_length=audio.shape[0],
+            )
         return language, language_probability
 
 

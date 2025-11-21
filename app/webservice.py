@@ -14,8 +14,28 @@ from whisper import tokenizer
 
 from app.config import CONFIG
 from app.factory.asr_model_factory import ASRModelFactory
+from app.logging_config import setup_structlog, get_logger
+from app.middleware.structured_logging import StructuredLoggingMiddleware
 from app.telemetry import get_metrics_reader, setup_telemetry
 from app.utils import load_audio
+
+# Set up structured logging
+setup_structlog(
+    service_name=CONFIG.OTEL_SERVICE_NAME,
+    log_level=CONFIG.LOG_LEVEL,
+    use_json=CONFIG.LOG_JSON,
+    use_colors=CONFIG.LOG_COLORS,
+)
+
+logger = get_logger(__name__)
+
+# Log warning if HF_TOKEN is missing for WhisperX
+if CONFIG.ASR_ENGINE == "whisperx" and CONFIG.HF_TOKEN == "":
+    logger.warning(
+        "HF_TOKEN not set",
+        message="You must set the HF_TOKEN environment variable to download the diarization model used by WhisperX",
+        asr_engine=CONFIG.ASR_ENGINE,
+    )
 
 asr_model = ASRModelFactory.create_asr_model()
 asr_model.load_model()
@@ -28,6 +48,9 @@ app = FastAPI(
     title="ASR-API",
     swagger_ui_parameters={"defaultModelsExpandDepth": -1},
 )
+
+# Add structured logging middleware
+app.add_middleware(StructuredLoggingMiddleware)
 
 # Set up OpenTelemetry instrumentation
 setup_telemetry(app, service_name=CONFIG.OTEL_SERVICE_NAME)

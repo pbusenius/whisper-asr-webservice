@@ -76,6 +76,9 @@ Key configuration options:
 - `OTEL_EXPORTER_OTLP_ENDPOINT`: Optional OTLP endpoint for traces/metrics
 - `OTEL_PROMETHEUS_METRICS_PATH`: Path for Prometheus metrics endpoint (default: /metrics)
 - `OTEL_LOG_LEVEL`: Set to "debug" to enable console span exporter for debugging
+- `LOG_LEVEL`: Logging level for structured logging (default: INFO)
+- `LOG_JSON`: Output logs in JSON format (default: true)
+- `LOG_COLORS`: Use colored output for logs (only applies when not using JSON, default: false)
 
 ### vLLM Whisper Configuration
 

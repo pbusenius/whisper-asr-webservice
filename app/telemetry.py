@@ -13,6 +13,9 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
 from app.config import CONFIG
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Global reference to the Prometheus metric reader
 _prometheus_metric_reader: Optional[PrometheusMetricReader] = None
@@ -55,7 +58,10 @@ def setup_telemetry(app, service_name: Optional[str] = None):
             span_processor = BatchSpanProcessor(otlp_exporter)
             tracer_provider.add_span_processor(span_processor)
         except ImportError:
-            print("Warning: OTLP exporter not available. Install opentelemetry-exporter-otlp for OTLP support.")
+            logger.warning(
+                "OTLP exporter not available",
+                message="Install opentelemetry-exporter-otlp for OTLP support",
+            )
 
     # Set up metrics with Prometheus exporter
     _prometheus_metric_reader = PrometheusMetricReader()
@@ -65,7 +71,7 @@ def setup_telemetry(app, service_name: Optional[str] = None):
     # Instrument FastAPI
     FastAPIInstrumentor.instrument_app(app)
 
-    print(f"OpenTelemetry instrumentation enabled for service: {service_name}")
+    logger.info("OpenTelemetry instrumentation enabled", service_name=service_name)
 
 
 def get_metrics_reader() -> Optional[PrometheusMetricReader]:
