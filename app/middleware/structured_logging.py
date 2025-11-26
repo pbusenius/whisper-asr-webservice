@@ -1,6 +1,7 @@
 """
 FastAPI middleware for structured logging request context.
 """
+import asyncio
 from uuid import uuid4
 
 from fastapi import Request
@@ -53,6 +54,10 @@ class StructuredLoggingMiddleware(BaseHTTPMiddleware):
                 request_id=request_id,
             )
             return response
+        except asyncio.CancelledError:
+            # Don't log cancelled errors (normal during shutdown/client disconnect)
+            # Re-raise immediately without logging
+            raise
         except Exception as e:
             logger.error(
                 "Request failed",
@@ -61,5 +66,6 @@ class StructuredLoggingMiddleware(BaseHTTPMiddleware):
             )
             raise
         finally:
+            # Always clear context, even on cancellation
             clear_request_context()
 

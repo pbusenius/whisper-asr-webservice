@@ -115,6 +115,21 @@ def setup_structlog(
     logging.getLogger("uvicorn.error").setLevel(logging.CRITICAL)
     logging.getLogger("fastapi").setLevel(logging.CRITICAL)
     
+    # Silence other common loggers that might output
+    logging.getLogger("httpx").setLevel(logging.CRITICAL)
+    logging.getLogger("httpcore").setLevel(logging.CRITICAL)
+    logging.getLogger("openai").setLevel(logging.CRITICAL)
+    logging.getLogger("transformers").setLevel(logging.CRITICAL)
+    logging.getLogger("torch").setLevel(logging.CRITICAL)
+    logging.getLogger("faster_whisper").setLevel(logging.CRITICAL)
+    logging.getLogger("whisper").setLevel(logging.CRITICAL)
+    logging.getLogger("whisperx").setLevel(logging.CRITICAL)
+    
+    # Remove all handlers from root logger to prevent any output
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+        handler.close()
+    
     # Build processors chain
     # Using PrintLoggerFactory, so we don't use stdlib-specific processors
     processors: list[Processor] = [

@@ -257,7 +257,14 @@ async def detect_language(
 )
 @click.version_option(version=projectMetadata["Version"])
 def start(host: str, port: Optional[int] = None):
-    uvicorn.run(app, host=host, port=port)
+    # Disable uvicorn's default logging - we only use structured logging
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_config=None,  # Disable uvicorn's default logging config
+        access_log=False,  # Disable access logs
+    )
 
 
 if __name__ == "__main__":
