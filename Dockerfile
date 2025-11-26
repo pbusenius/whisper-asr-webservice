@@ -41,15 +41,27 @@ RUN uv sync && \
     torch==2.7.1 torchaudio==2.7.1
 
 # Download Whisper model during build
+# Use BuildKit cache mount to share model cache between builds
 ARG ASR_MODEL=base
 ARG ASR_ENGINE=faster_whisper
 ENV ASR_MODEL=${ASR_MODEL}
 ENV ASR_ENGINE=${ASR_ENGINE}
 ENV ASR_MODEL_PATH=/app/models
 
-RUN mkdir -p /app/models && \
-    uv run python scripts/download_model.py && \
-    echo "Model downloaded to /app/models"
+# Download model using cache mount - models are cached between builds
+# The script checks if model exists in cache, downloads if not, then copies to /app/models
+RUN --mount=type=cache,target=/root/.cache \
+    mkdir -p /app/models && \
+    # Use cache directory for downloads, then copy to /app/models
+    ASR_MODEL_PATH=/root/.cache uv run python scripts/download_model.py && \
+    # Copy models from cache to /app/models for runtime use
+    if [ -d "/root/.cache/faster-whisper" ]; then \
+        cp -r /root/.cache/faster-whisper /app/models/ 2>/dev/null || true; \
+    fi && \
+    if [ -d "/root/.cache/whisper" ]; then \
+        cp -r /root/.cache/whisper /app/models/ 2>/dev/null || true; \
+    fi && \
+    echo "Model checked/downloaded to /app/models"
 
 EXPOSE 9000
 
