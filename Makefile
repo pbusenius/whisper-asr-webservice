@@ -15,9 +15,10 @@ help: ## Show this help message
 	@echo 'Available targets:'
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-build: ## Build GPU Docker image
+build: ## Build GPU Docker image (uses BuildKit cache for model downloads)
 	@echo "Building GPU image: $(IMAGE_TAG)"
-	docker build -f Dockerfile --build-arg ASR_MODEL=base --build-arg ASR_ENGINE=faster_whisper -t $(IMAGE_TAG) -t $(IMAGE_LATEST) .
+	@echo "Note: Models are cached between builds using BuildKit cache mounts"
+	DOCKER_BUILDKIT=1 docker build -f Dockerfile --build-arg ASR_MODEL=base --build-arg ASR_ENGINE=faster_whisper -t $(IMAGE_TAG) -t $(IMAGE_LATEST) .
 
 push: ## Push Docker images
 	@echo "Pushing images: $(IMAGE_TAG) and $(IMAGE_LATEST)"
