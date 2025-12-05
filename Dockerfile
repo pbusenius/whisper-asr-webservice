@@ -35,15 +35,20 @@ COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui-bundle.js swagger-ui-ass
 # Install CUDA dependencies from PyTorch CUDA index
 # Strategy: Install torch/torchaudio separately with uv pip install (respects UV_NO_VERIFY_HASHES)
 # Then install rest of dependencies with uv sync (without cuda extra)
+# Also install NeMo toolkit if Parakeet engine is used
+ARG ASR_ENGINE=faster_whisper
 RUN uv sync && \
     UV_NO_VERIFY_HASHES=1 uv pip install \
     --extra-index-url https://download.pytorch.org/whl/cu126 \
-    torch==2.7.1 torchaudio==2.7.1
+    torch==2.7.1 torchaudio==2.7.1 && \
+    if [ "$ASR_ENGINE" = "parakeet" ]; then \
+        echo "Installing NeMo toolkit for Parakeet engine..." && \
+        UV_NO_VERIFY_HASHES=1 uv pip install "nemo_toolkit[asr]>=2.4.0"; \
+    fi
 
-# Download Whisper model during build
+# Download model during build
 # Use BuildKit cache mount to share model cache between builds
 ARG ASR_MODEL=base
-ARG ASR_ENGINE=faster_whisper
 ENV ASR_MODEL=${ASR_MODEL}
 ENV ASR_ENGINE=${ASR_ENGINE}
 ENV ASR_MODEL_PATH=/app/models
@@ -60,6 +65,9 @@ RUN --mount=type=cache,target=/root/.cache \
     fi && \
     if [ -d "/root/.cache/whisper" ]; then \
         cp -r /root/.cache/whisper /app/models/ 2>/dev/null || true; \
+    fi && \
+    if [ -d "/root/.cache/huggingface" ]; then \
+        cp -r /root/.cache/huggingface /app/models/ 2>/dev/null || true; \
     fi && \
     echo "Model checked/downloaded to /app/models"
 

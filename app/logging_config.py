@@ -124,6 +124,7 @@ def setup_structlog(
     logging.getLogger("faster_whisper").setLevel(logging.CRITICAL)
     logging.getLogger("whisper").setLevel(logging.CRITICAL)
     logging.getLogger("whisperx").setLevel(logging.CRITICAL)
+    logging.getLogger("nemo").setLevel(logging.CRITICAL)
     
     # Remove all handlers from root logger to prevent any output
     for handler in root_logger.handlers[:]:

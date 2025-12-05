@@ -51,6 +51,30 @@ def check_whisperx_model(model_name: str) -> bool:
     print(f"⚠️  WhisperX models are typically downloaded from HuggingFace at runtime")
     return False
 
+def check_parakeet_model(model_name: str, model_path: str) -> bool:
+    """Check if Parakeet/NeMo model exists."""
+    # NeMo models are stored in HuggingFace cache format
+    # Check both hub/ format and legacy format
+    cache_dir = Path(model_path) if Path(model_path).is_absolute() else Path.home() / ".cache" / "huggingface"
+    
+    # Parakeet models use HuggingFace format: models--nvidia--parakeet-tdt-0.6b-v3
+    model_id = model_name.replace("/", "--")
+    if not model_id.startswith("models--"):
+        model_id = f"models--{model_id}"
+    
+    model_cache_hub = cache_dir / "hub" / model_id
+    model_cache_legacy = cache_dir / model_id
+    
+    if model_cache_hub.exists() or model_cache_legacy.exists():
+        # Check for model files
+        model_files = list(model_cache_hub.glob("**/*.bin")) + list(model_cache_hub.glob("**/*.safetensors")) if model_cache_hub.exists() else []
+        model_files += list(model_cache_legacy.glob("**/*.bin")) + list(model_cache_legacy.glob("**/*.safetensors")) if model_cache_legacy.exists() else []
+        
+        if model_files:
+            print(f"✅ Model {model_name} already exists in cache")
+            return True
+    return False
+
 try:
     if ASR_ENGINE == "faster_whisper":
         if check_faster_whisper_model(MODEL_NAME, MODEL_PATH):
@@ -82,6 +106,32 @@ try:
         # We can't easily check for them here, so we'll skip
         print(f"⚠️  WhisperX models are downloaded from HuggingFace at runtime - skipping build-time download")
         sys.exit(0)
+        
+    elif ASR_ENGINE == "parakeet":
+        # Check if model already exists
+        model_name = MODEL_NAME
+        # If MODEL_NAME is just "parakeet-tdt-0.6b-v3", use full HuggingFace path
+        if model_name == "parakeet-tdt-0.6b-v3" or not "/" in model_name:
+            model_name = f"nvidia/{model_name}" if not model_name.startswith("nvidia/") else model_name
+        
+        if check_parakeet_model(model_name, MODEL_PATH):
+            print(f"⏭️  Skipping download - model already exists")
+            sys.exit(0)
+        
+        try:
+            import nemo.collections.asr as nemo_asr
+            print(f"Downloading Parakeet model: {model_name}")
+            # NeMo will download the model from HuggingFace on first use
+            # We'll trigger the download by loading the model
+            model = nemo_asr.models.ASRModel.from_pretrained(model_name=model_name)
+            print(f"✅ Model {model_name} downloaded successfully")
+        except ImportError:
+            print(f"⚠️  NeMo toolkit not installed - model will be downloaded at runtime")
+            print(f"   Install with: pip install -U nemo_toolkit['asr']")
+            sys.exit(0)
+        except Exception as e:
+            print(f"❌ Error downloading Parakeet model: {e}")
+            sys.exit(1)
         
     else:
         print(f"⚠️  Engine {ASR_ENGINE} - skipping model download (may download at runtime)")
