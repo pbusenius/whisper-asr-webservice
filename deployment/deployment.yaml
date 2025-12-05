@@ -23,12 +23,22 @@ spec:
         nvidia.com/gpu.present: "true"
       containers:
         - name: asr-api
-                image: "pbusenius/asr-api:0.2.0"
+          # Available ASR engine images:
+          # - pbusenius/asr-api-faster-whisper:0.2.0 (default, recommended)
+          # - pbusenius/asr-api-openai-whisper:0.2.0
+          # - pbusenius/asr-api-whisperx:0.2.0 (requires HF_TOKEN for diarization)
+          # - pbusenius/asr-api-parakeet:0.2.0 (NVIDIA Parakeet, 25 languages)
+          # - pbusenius/asr-api-voxtral:0.2.0
+          # - pbusenius/asr-api-vllm-whisper:0.2.0 (requires external vLLM server)
+          # Note: Each engine has its own optimized Docker image with specific dependencies
+          image: "pbusenius/asr-api-faster-whisper:0.2.0"
           ports:
             - containerPort: 9000
           env:
             - name: ASR_MODEL
               value: "base"
+            # ASR_ENGINE must match the Docker image used above
+            # Options: faster_whisper, openai_whisper, whisperx, parakeet, voxtral, vllm_whisper
             - name: ASR_ENGINE
               value: "faster_whisper"
             - name: ASR_DEVICE

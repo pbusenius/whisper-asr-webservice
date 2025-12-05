@@ -1,0 +1,61 @@
+FROM swaggerapi/swagger-ui:v5.9.1 AS swagger-ui
+
+FROM nvidia/cuda:12.6.3-base-ubuntu22.04
+
+LABEL org.opencontainers.image.source="https://github.com/pbusenius/asr-api"
+LABEL org.opencontainers.image.description="ASR-API with OpenAI Whisper engine"
+
+ENV PYTHON_VERSION=3.10
+ENV ASR_ENGINE=openai_whisper
+
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -qq update \
+    && apt-get -qq install --no-install-recommends \
+    python${PYTHON_VERSION} \
+    python${PYTHON_VERSION}-venv \
+    python3-pip \
+    libcudnn8 \
+    libcublas-12-6 \
+    libcublas-dev-12-6 \
+    ffmpeg \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -s -f /usr/bin/python${PYTHON_VERSION} /usr/bin/python3 && \
+    ln -s -f /usr/bin/python${PYTHON_VERSION} /usr/bin/python && \
+    ln -s -f /usr/bin/pip3 /usr/bin/pip
+
+WORKDIR /app
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+COPY . .
+COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui.css swagger-ui-assets/swagger-ui.css
+COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui-bundle.js swagger-ui-assets/swagger-ui-bundle.js
+
+# Install dependencies
+RUN uv sync && \
+    UV_NO_VERIFY_HASHES=1 uv pip install \
+    --extra-index-url https://download.pytorch.org/whl/cu126 \
+    torch==2.7.1 torchaudio==2.7.1
+
+# Download model during build
+ARG ASR_MODEL=base
+ENV ASR_MODEL=${ASR_MODEL}
+ENV ASR_MODEL_PATH=/app/models
+
+RUN --mount=type=cache,target=/root/.cache \
+    mkdir -p /app/models && \
+    ASR_MODEL_PATH=/root/.cache uv run python scripts/download_model.py && \
+    if [ -d "/root/.cache/whisper" ]; then \
+        cp -r /root/.cache/whisper /app/models/ 2>/dev/null || true; \
+    fi && \
+    echo "Model checked/downloaded to /app/models"
+
+EXPOSE 9000
+
+ENV PATH="/app/.venv/bin:${PATH}"
+
+ENTRYPOINT ["asr-api"]
+
